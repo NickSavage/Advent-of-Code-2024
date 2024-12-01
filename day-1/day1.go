@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -11,27 +12,6 @@ import (
 type Input struct {
 	First  []int
 	Second []int
-}
-
-func FindSmallest(list []int) (int, []int) {
-	smallest := list[0]
-	for _, item := range list {
-		if item < smallest {
-			smallest = item
-		}
-	}
-
-	found := false
-	results := []int{}
-	for _, item := range list {
-		if !found && item == smallest {
-			found = true
-		} else {
-			results = append(results, item)
-		}
-	}
-
-	return smallest, results
 }
 
 func parseInput(path string) (Input, error) {
@@ -63,14 +43,15 @@ func parseInput(path string) (Input, error) {
 
 func iterateInput(input *Input) int {
 	result := 0
-	// log.Printf("first %v", input.First)
-	// log.Printf("second %v", input.Second)
+	sort.Ints(input.First)
+	sort.Ints(input.Second)
 
 	for range len(input.First) {
-		first, list := FindSmallest(input.First)
-		input.First = list
-		second, list := FindSmallest(input.Second)
-		input.Second = list
+		first := input.First[0]
+		second := input.Second[0]
+
+		input.First = input.First[1:]
+		input.Second = input.Second[1:]
 
 		if first > second {
 			result += first - second
@@ -106,14 +87,6 @@ func main() {
 	input, err := parseInput("sampleInput")
 	if err != nil {
 		log.Fatal(err)
-	}
-	// tests
-	test, testList := FindSmallest(input.First)
-	if test != 1 {
-		log.Fatalf("wrong result returned from FindIndexSmallest, got %v want %v", test, 1)
-	}
-	if len(testList) != 5 {
-		log.Fatalf("wrong length of returned list, got %v want %v", len(testList), 5)
 	}
 	testSimilarity := calculateSimilarityScore(input)
 	if testSimilarity != 31 {
