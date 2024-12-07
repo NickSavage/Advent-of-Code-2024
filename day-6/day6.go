@@ -11,6 +11,11 @@ type Position struct {
 	Y int
 }
 
+type State struct {
+	Position  Position
+	Direction Direction
+}
+
 type Input struct {
 	Map               [][]string
 	Position          Position
@@ -133,24 +138,65 @@ func PartOneCountDistinctPositions(input *Input) int {
 	return input.DistinctPositions
 
 }
-
-// if we assume pos is a #, does this create a loop?
-func CheckIfLoop(pos Position) bool {
-
+func copyMap(original [][]string) [][]string {
+	newMap := make([][]string, len(original))
+	for i := range original {
+		newMap[i] = make([]string, len(original[i]))
+		copy(newMap[i], original[i])
+	}
+	return newMap
 }
-
 func PartTwoCheckPlacementObstacle(input *Input) int {
 	placements := 0
-	for y, row := range input.Map {
-		for x, value := range row {
-			if value == "X" || value == "^" {
+	originalMap := copyMap(input.Map)
+	guardPos, guardDir := FindPosition(originalMap)
+
+	// Skip the guard's starting position
+	originalMap[guardPos.Y][guardPos.X] = "."
+
+	for y := 0; y < len(originalMap); y++ {
+		for x := 0; x < len(originalMap[0]); x++ {
+			if originalMap[y][x] == "#" {
 				continue
+			}
+
+			newMap := copyMap(originalMap)
+			newMap[y][x] = "#"
+
+			testInput := &Input{
+				Map:       newMap,
+				Position:  guardPos,
+				Direction: guardDir,
+				MaxX:      len(newMap[0]),
+				MaxY:      len(newMap),
+				OffScreen: false,
+			}
+
+			visited := make(map[State]bool)
+			hasLoop := false
+
+			for !testInput.OffScreen {
+				currentState := State{
+					Position:  testInput.Position,
+					Direction: testInput.Direction,
+				}
+
+				if visited[currentState] {
+					hasLoop = true
+					break
+				}
+
+				visited[currentState] = true
+				MoveGuard(testInput)
+			}
+
+			if hasLoop {
+				placements++
 			}
 		}
 	}
 	return placements
 }
-
 func main() {
 	testInput := parseInput("sampleInput")
 	input := parseInput("input")
@@ -159,7 +205,7 @@ func main() {
 	if testPartOne != 41 {
 		log.Fatalf("got wrong output for test part one, got %v want %v", testPartOne, 41)
 	}
-	testPartTwo := PartTwoCheckPlacementObstacle(input)
+	testPartTwo := PartTwoCheckPlacementObstacle(testInput)
 	if testPartTwo != 6 {
 		log.Fatalf("got wrong output for test part two, got %v want %v", testPartTwo, 6)
 	}
