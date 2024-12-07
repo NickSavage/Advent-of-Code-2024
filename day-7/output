@@ -1,0 +1,3 @@
+# command-line-arguments
+./day7.go:99:2: total declared and not used
+./day7.go:100:6: x declared and not used
