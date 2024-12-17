@@ -125,98 +125,46 @@ func parseInput(path string) *Input {
 	return &result
 }
 
-func FindCombinations(machine Machine) []Combination {
-	results := []Combination{}
-	maxA := machine.X/machine.A.X + 1
-	maxB := machine.X/machine.B.X + 1
-	max := 0
-	if maxA > maxB {
-		max = maxA
+func Determinant(ax, ay, bx, by int) int {
+	return ax*by - ay*bx
+}
+
+func FindSolution(machine Machine) int {
+	det := Determinant(machine.A.X, machine.A.Y, machine.B.X, machine.B.Y)
+	log.Printf("det %v", det)
+	if det == 0 {
+		return 0
+	}
+	nx := (machine.X * machine.B.Y) - (machine.Y * machine.B.X)
+	log.Printf("x %v * by %v - y %v * ay %v", machine.X, machine.B.Y, machine.Y, machine.A.Y)
+	x := nx / det
+	
+	ny := (machine.Y * machine.A.X) - (machine.X * machine.A.Y)
+	y := ny / det
+	log.Printf("nx %v, ny  %v", nx, ny)
+	
+	// Verify solution
+	targetX := x*machine.A.X + y*machine.B.X
+	targetY := x*machine.A.Y + y*machine.B.Y
+	
+	if targetX == machine.X && targetY == machine.Y && x >= 0 && y >= 0 {
+		score := x*3 + y*1
+		log.Printf("x %v y %v score %v", x, y, score)
+		return score
 	} else {
-		max = maxB
+		log.Printf("result not good")
+		return 0
 	}
-
-	for tryA := range max {
-		for tryB := range max {
-			check := tryA*machine.A.X + tryB*machine.B.X
-			// log.Printf("a %v * %v + b %v * %v = %v", tryA, machine.A.X, tryB, machine.B.X, check)
-
-			if check > machine.X {
-				break
-			}
-			if check == machine.X {
-				checkY := tryA*machine.A.Y + tryB*machine.B.Y
-				if checkY == machine.Y {
-					log.Printf("found!")
-
-					results = append(results, Combination{
-						A: tryA,
-						B: tryB,
-					})
-
-				}
-			}
-
-		}
-	}
-
-	return results
 }
 
 func PartOneCountTokens(input *Input) int {
 	result := 0
 
-	for i, machine := range input.Machines {
-		log.Printf("i %v", i)
-		combos := FindCombinations(machine)
-		min := -1
-		// found := []Combination{}
-		for _, combo := range combos {
-			score := combo.A*3 + combo.B*1
-			log.Printf("combo %v score %v", combo, score)
-			if min == -1 {
-				min = score
-			} else if score < min {
-				min = score
-			}
-		}
-		if min == -1 {
-			min = 0
-		}
-		result += min
-
+	for _, machine := range input.Machines {
+		result += FindSolution(machine)
 	}
 	return result
 
-}
-func GCD(a, b int) int {
-	// Make sure we're working with absolute values
-	if a < 0 {
-		a = -a
-	}
-	if b < 0 {
-		b = -b
-	}
-
-	// GCD(a,b) = GCD(b,a mod b)
-	for b != 0 {
-		a, b = b, a%b
-	}
-	return a
-}
-
-// Returns gcd and the coefficients x, y where ax + by = gcd
-func ExtendedGCD(a, b int) (gcd, x, y int) {
-	if b == 0 {
-		return a, 1, 0
-	}
-
-	gcd, x1, y1 := ExtendedGCD(b, a%b)
-
-	x = y1
-	y = x1 - (a/b)*y1
-
-	return gcd, x, y
 }
 func PartTwoCountTokens(input *Input) int {
 	result := 0
@@ -226,14 +174,8 @@ func PartTwoCountTokens(input *Input) int {
 		machine.X += 10000000000000
 		machine.Y += 10000000000000
 
-		// log.Printf("%v", machine.X/machine.)
+		result += FindSolution(machine)
 
-		// if minTokens != -1 {
-		// 	log.Printf("Machine %d minimum tokens: %d", i, minTokens)
-		// 	result += minTokens
-		// } else {
-		// 	log.Printf("No solution found for machine %d", i)
-		// }
 	}
 	return result
 }
@@ -246,12 +188,15 @@ func main() {
 		log.Fatalf("got wrong output for test part one, got %v want %v", testPartOne, 480)
 	}
 
-	// input := parseInput("input")
-	// partOne := PartOneCountTokens(input)
-	// log.Printf("Part One: %v", partOne)
+	input := parseInput("input")
+	partOne := PartOneCountTokens(input)
+	log.Printf("Part One: %v", partOne)
 
 	testPartTwo := PartTwoCountTokens(testInput)
-	if testPartTwo != 480 {
-		log.Fatalf("got wrong output for test part two, got %v want %v", testPartTwo, 480)
+	if testPartTwo !=875318608908 {
+		log.Fatalf("got wrong output for test part two, got %v want %v", testPartTwo, 875318608908)
 	}
+	input = parseInput("input")
+	partTwo := PartTwoCountTokens(input)
+	log.Printf("Part Two: %v", partTwo)
 }
